@@ -2,7 +2,7 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
+
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -69,15 +69,63 @@ impl<T> LinkedList<T> {
             },
         }
     }
-	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
+	pub fn merge( mut list_a:LinkedList<T>,mut list_b:LinkedList<T>) -> Self 
+    where 
+        T: PartialOrd
 	{
 		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
+
+        let mut result = Self::new();
+        result.length = list_a.length + list_b.length;
+        let mut a = list_a.start;
+        let mut b = list_b.start;
+
+        while let(Some(node_a),Some(node_b)) = (a,b){
+            unsafe{
+                if (*node_a.as_ptr()).val <= (*node_b.as_ptr()).val {
+                    a = (*node_a.as_ptr()).next;
+                    result.append(Some(node_a));
+                    
+                }else{
+                    b = (*node_b.as_ptr()).next;
+                    result.append(Some(node_b));
+                    
+                }
+            }
         }
+
+        let remain = if a.is_some() { a } else { b };
+        if let Some(node) = remain{
+            unsafe{
+                if let Some(end_ptr) = result.end{
+                    (*end_ptr.as_ptr()).next = Some(node);
+                }else{
+                    //结果链表目前是空的 (result.end 是 None)
+                    // 那么剩余部分的第一个节点，就是整个结果链表的“头”
+                    result.start = Some(node);
+                }
+                result.end = if a.is_some() {list_a.end} else {list_b.end};
+            }
+            
+        }
+        list_a.start = None;
+        list_a.end  = None;
+        list_b.start = None;
+        list_b.end  = None;
+
+        result
+
 	}
+    unsafe fn append(&mut self, mut node: Option<NonNull<Node<T>>>) ->(){
+        if let Some(n) = node{
+            (*n.as_ptr()).next = None;
+            match self.end{ 
+                None => self.start = Some(n),
+                Some(p) => (*p.as_ptr()).next = Some(n),
+            }
+        self.end = Some(n);
+        }
+    }
 }
 
 impl<T> Display for LinkedList<T>
